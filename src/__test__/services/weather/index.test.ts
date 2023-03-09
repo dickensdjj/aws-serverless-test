@@ -1,6 +1,5 @@
-import { getWeatherFromAPI, inputValidator, weatherFormatter} from "../../../services";
+import * as service from "../../../services/weather";
 import { client } from "../../../utils/httpFactory";
-import resetAllMocks = jest.resetAllMocks;
 
 jest.mock("../../../utils/httpFactory", () => ({
   client: {
@@ -8,10 +7,9 @@ jest.mock("../../../utils/httpFactory", () => ({
   }
 }))
 
-
 describe('Weather API', () => {
   beforeEach(() => {
-    resetAllMocks()
+    jest.resetAllMocks()
   })
 
   const testPayload = {
@@ -70,33 +68,41 @@ describe('Weather API', () => {
 
   describe('inputValidator', () => {
     it('should return false if the postcode is not 4 digit', () => {
-      const result = inputValidator('12345');
+      const result = service.inputValidator('12345');
       expect(result).toBe(false);
     })
 
     it('should return true if the postcode is formatted correctly', () => {
-      const result = inputValidator('3000');
+      const result = service.inputValidator('3000');
       expect(result).toBe(true);
     })
   })
 
   describe('result formatter', () => {
     it('should return correct format', () => {
-      expect(weatherFormatter(testPayload)).toEqual(testFormattedPayload);
+      expect(service.weatherFormatter(testPayload)).toEqual(testFormattedPayload);
     })
   })
 
   describe('get weather from API', () => {
     it('should return data if client response is 200', async () => {
       (client.get as jest.Mock).mockResolvedValue({statusCode: 200, data: {test: 123}})
-      const result = await getWeatherFromAPI('3000')
+      const result = await service.getWeatherFromAPI('3000')
       expect(result).toEqual({test: 123});
     })
 
     it('should return empty if client response is not 200', async () => {
       (client.get as jest.Mock).mockResolvedValue({statusCode: 400, data: {test: 123}})
-      const result = await getWeatherFromAPI('3000')
+      const result = await service.getWeatherFromAPI('3000')
       expect(result).toEqual({});
+    })
+  })
+
+  describe('get weather', () => {
+    it('test', async () => {
+      jest.spyOn(service, 'getWeatherFromAPI').mockResolvedValueOnce(testPayload)
+      const result = await service.getWeather('3000')
+      expect(result).toEqual(testFormattedPayload);
     })
   })
 })
